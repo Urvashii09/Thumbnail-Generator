@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuminaGen | Visionary Thumbnail Design</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="background-animation"></div>
+    
+    <div class="container">
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+            <i class="fa-solid fa-sun"></i>
+        </button>
+        <header>
+            <h1><i class="fa-solid fa-shapes"></i> LuminaGen</h1>
+            <p>Generate striking, professional thumbnail concepts instantly</p>
+        </header>
+
+        <main>
+            <div class="input-section glass-card">
+                <form id="generator-form">
+                    <div class="input-group">
+                        <label for="topic">Video Topic or Title</label>
+                        <input type="text" id="topic" placeholder="e.g. 10 Best API Tools in 2024" required autocomplete="off">
+                    </div>
+
+                    <div class="options-row">
+                        <div class="input-group">
+                            <label for="audience">Target Audience</label>
+                            <select id="audience" class="theme-select">
+                                <option value="General">General</option>
+                                <option value="Beginners">Beginners</option>
+                                <option value="Developers">Developers</option>
+                                <option value="Professionals">Professionals</option>
+                                <option value="Students">Students</option>
+                                <option value="Kids">Kids</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="platform">Platform</label>
+                            <select id="platform" class="theme-select">
+                                <option value="YouTube">YouTube</option>
+                                <option value="Instagram">Instagram</option>
+                                <option value="TikTok">TikTok</option>
+                                <option value="LinkedIn">LinkedIn</option>
+                                <option value="Twitter">Twitter / X</option>
+                                <option value="Blog">Blog / Website</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="options-row">
+                        <div class="input-group theme-group">
+                            <label for="theme">Visual Theme</label>
+                            <select id="theme" class="theme-select">
+                                <option value="Aesthetic">Aesthetic (Soft, moody, glassmorphism)</option>
+                                <option value="Tech">Tech (Clean, code interfaces, futuristic)</option>
+                                <option value="Gaming">Gaming (High contrast, neon, action)</option>
+                                <option value="Finance">Finance (Minimalist, elegant, premium)</option>
+                                <option value="Vlog">Vlog (Bright, sunny, lifestyle)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group logo-group">
+                            <label for="logo">Custom Logo (Optional)</label>
+                            <div class="file-upload">
+                                <input type="file" id="logo" accept="image/png, image/jpeg, image/webp" class="file-input">
+                                <label for="logo" class="file-label">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                    <span id="file-name">Choose Logo</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" id="generate-btn" class="primary-btn">
+                        <span>Generate Concept</span>
+                        <i class="fa-solid fa-bolt"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading" class="loading-state hidden">
+                <div class="loader"></div>
+                <p>Generating aesthetic concept...</p>
+            </div>
+
+            <!-- Result Area -->
+            <div id="result-area" class="result-area hidden">
+                
+                <div class="concept-card glass-card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-image"></i> Concept Details</h2>
+                    </div>
+                    
+                    <div class="concept-content">
+                        <!-- Generated Image Area -->
+                        <div id="image-container" class="detail-group hidden">
+                            <div class="image-header">
+                                <h3><i class="fa-solid fa-images"></i> Generated Thumbnail Art</h3>
+                                <button id="download-btn" class="icon-btn hidden" title="Download Image">
+                                    <i class="fa-solid fa-download"></i> Download
+                                </button>
+                            </div>
+                            <div id="image-error" class="error-text hidden"></div>
+                            <img id="generated-image" src="" alt="Generated Thumbnail" class="generated-img hidden">
+                        </div>
+
+                        <div class="detail-group">
+                            <h3><i class="fa-solid fa-lightbulb"></i> Overall Concept</h3>
+                            <p id="visual-concept" class="prompt-text"></p>
+                        </div>
+                        
+                        <div class="detail-group">
+                            <h3><i class="fa-solid fa-user-astronaut"></i> Main Subject</h3>
+                            <p id="main-subject" class="layout-text"></p>
+                        </div>
+
+                        <div class="detail-group">
+                            <h3><i class="fa-solid fa-image"></i> Background Scene</h3>
+                            <p id="background-scene" class="layout-text"></p>
+                        </div>
+                        
+                        <div class="detail-group">
+                            <h3><i class="fa-solid fa-face-smile"></i> Emotion / Action</h3>
+                            <p id="emotion-action" class="layout-text"></p>
+                        </div>
+
+                        <div class="detail-group">
+                            <h3><i class="fa-solid fa-droplet"></i> Color Palette</h3>
+                            <div id="color-palette" class="color-palette-display"></div>
+                        </div>
+
+                        <div class="detail-group">
+                            <h3><i class="fa-regular fa-lightbulb"></i> Lighting Style</h3>
+                            <p id="lighting-style" class="layout-text"></p>
+                        </div>
+
+                        <div class="detail-group">
+                            <h3><i class="fa-solid fa-crop-simple"></i> Composition</h3>
+                            <p id="composition" class="layout-text"></p>
+                        </div>
+                        
+                        <div class="detail-group">
+                            <h3><i class="fa-solid fa-font"></i> Text Overlay</h3>
+                            <div id="text-overlay" class="overlay-text-display"></div>
+                            <button class="copy-btn copy-text-btn" onclick="copyText('text-overlay', this)" title="Copy Text"><i class="fa-regular fa-copy"></i></button>
+                        </div>
+
+                        <div class="detail-group">
+                            <h3><i class="fa-solid fa-fire"></i> Viral Hook</h3>
+                            <p id="viral-hook" class="layout-text"></p>
+                        </div>
+
+                        <div class="detail-group">
+                            <h3><i class="fa-solid fa-terminal"></i> Image Prompt</h3>
+                            <p id="image-prompt" class="prompt-text"></p>
+                            <button class="copy-btn" onclick="copyText('image-prompt', this)" title="Copy Prompt"><i class="fa-regular fa-copy"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+        
+        <footer>
+            <p>Powered by Google Gemini Pro</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
