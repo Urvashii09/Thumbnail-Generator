@@ -166,27 +166,119 @@ Format the response as pure JSON only. Do not wrap it in markdown codeblocks lik
                     return f"data:{mime};base64,{encoded_image}"
         raise ValueError("No image data returned")
 
-    try:
-        # We must generate text first to get the image_prompt
-        concept_data = generate_text()
+@app.route('/api/generate_carousel', methods=['POST'])
+def generate_carousel():
+    data = request.json
+    topic = data.get('topic')
+    theme = data.get('theme', 'Aesthetic')
+    audience = data.get('audience', 'General')
+    logo_base64 = data.get('logoBase64', None)
+    aspect_ratio = data.get('aspectRatio', '1:1')
+    
+    if not GEMINI_API_KEY:
+        return jsonify({"error": "GEMINI_API_KEY is missing."}), 500
+
+    if not topic:
+        return jsonify({"error": "Topic is required"}), 400
+
+    def generate_carousel_text():
+        prompt = f"""
+You are a world-class social media strategist and visual designer specializing in Instagram carousels.
+
+Your task is to generate a highly engaging 5–7 slide carousel post based on the topic: "{topic}".
+The carousel should tell a story, provide value, or teach something in a catchy, visual-first way.
+
+INPUT:
+Topic: {topic}
+Visual Theme: {theme}
+Target Audience: {audience}
+
+INSTRUCTIONS:
+1. Generate 5–7 slides that follow a logical progression (Hook -> Value -> Call to Action).
+2. Each slide must have a "heading" (max 5 words) and a "subtext" (max 12 words).
+3. Suggest a consistent "color_palette" (3-4 hex codes) and "lighting_style" for the entire carousel.
+4. For EACH slide, generate a detailed "image_prompt" for an AI image generator. 
+   - Maintain visual consistency across all slides (same characters, style, or environment).
+   - Specify NO TEXT in the generated images.
+   - The images should be cinematic and high quality.
+
+OUTPUT FORMAT:
+Provide the output in a structured JSON format with these exact keys:
+{{
+  "slides": [
+    {{
+      "slide_number": 1,
+      "heading": "...",
+      "subtext": "...",
+      "image_prompt": "..."
+    }},
+    ...
+  ],
+  "color_palette": ["#...", "#...", ...],
+  "lighting_style": "...",
+  "visual_consistency_note": "How to keep it consistent"
+}}
+
+Format the response as pure JSON only. Do not wrap it in markdown codeblocks like ```json ```.
+        """
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt
+        )
+        text_response = response.text.strip()
+        if text_response.startswith("```json"): text_response = text_response[7:]
+        if text_response.endswith("```"): text_response = text_response[:-3]
+        return json.loads(text_response)
+
+    def generate_single_slide_image(slide, aspect_ratio):
+        target_prompt = slide.get("image_prompt", "")
+        full_prompt = f"{target_prompt} CRITICAL: ABSOLUTELY NO TEXT, NO WORDS. High quality, cinematic background art."
         
         try:
-            # Now generate image using the new image_prompt
-            img_data = generate_image(concept_data)
+            image_response = client.models.generate_content(
+                model="gemini-3.1-flash-image-preview",
+                contents=full_prompt,
+                config=types.GenerateContentConfig(
+                    image_config=types.ImageConfig(aspect_ratio=aspect_ratio)
+                )
+            )
             
-            # Apply logo composite if provided
-            if logo_base64:
-                img_data = composite_logo(img_data, logo_base64)
-                
-            concept_data["generated_image_base64"] = img_data
-        except Exception as img_err:
-            print(f"Error generating image: {img_err}")
-            concept_data["image_error"] = f"Failed to generate thumbnail image due to API error: {img_err}"
+            if getattr(image_response, 'candidates', None):
+                first = image_response.candidates[0]
+                parts = getattr(first.content, 'parts', None)
+                if parts:
+                    inline = getattr(parts[0], 'inline_data', None)
+                    if inline and getattr(inline, 'data', None):
+                        img_b64 = base64.b64encode(inline.data).decode('utf-8')
+                        mime = getattr(inline, 'mime_type', 'image/jpeg')
+                        return f"data:{mime};base64,{img_b64}"
+        except Exception as e:
+            print(f"Error generating slide {slide['slide_number']}: {e}")
+        return None
+
+    try:
+        carousel_data = generate_carousel_text()
+        slides = carousel_data.get("slides", [])
+        
+        # Parallel image generation
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(slides)) as executor:
+            future_to_slide = {executor.submit(generate_single_slide_image, s, aspect_ratio): s for s in slides}
             
-        return jsonify(concept_data)
+            for future in concurrent.futures.as_completed(future_to_slide):
+                slide = future_to_slide[future]
+                try:
+                    img_data = future.result()
+                    if img_data and logo_base64:
+                        img_data = composite_logo(img_data, logo_base64)
+                    slide["generated_image_base64"] = img_data
+                except Exception as e:
+                    print(f"Slide generation failed: {e}")
+                    slide["generated_image_base64"] = None
+
+        return jsonify(carousel_data)
     except Exception as e:
-        print(f"Error generating content: {e}")
-        return jsonify({"error": "Failed to generate concept. Please check server logs and API Key."}), 500
+        print(f"Carousel Error: {e}")
+        return jsonify({"error": f"Failed to generate carousel: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

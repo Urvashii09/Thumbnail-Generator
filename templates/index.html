@@ -3,28 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LuminaGen | Visionary Thumbnail Design</title>
+    <title>Thumbify AI | Smart Thumbnails and Zero Effort</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="background-animation"></div>
+    <div class="background-animation">
+        <div class="blob"></div>
+    </div>
     
     <div class="container">
         <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
             <i class="fa-solid fa-sun"></i>
         </button>
         <header>
-            <h1><i class="fa-solid fa-shapes"></i> LuminaGen</h1>
-            <p>Generate striking, professional thumbnail concepts instantly</p>
+            <h1><i class="fa-solid fa-shapes"></i> Thumbify AI</h1>
+            <p>Smart Thumbnails and Zero Effort</p>
         </header>
 
         <main>
+            <div class="mode-switcher fadeInUp" style="animation-delay: 0.1s;">
+                <button class="mode-tab active" data-mode="single"><i class="fa-solid fa-image"></i> Single Thumbnail</button>
+                <button class="mode-tab" data-mode="carousel"><i class="fa-solid fa-images"></i> Carousel Post</button>
+            </div>
+
             <div class="input-section glass-card">
                 <form id="generator-form">
+                    <input type="hidden" id="gen-mode" value="single">
                     <div class="input-group">
-                        <label for="topic">Video Topic or Title</label>
+                        <label for="topic">Content Topic or Title</label>
                         <input type="text" id="topic" placeholder="e.g. 10 Best API Tools in 2024" required autocomplete="off">
                     </div>
 
@@ -40,7 +48,7 @@
                                 <option value="Kids">Kids</option>
                             </select>
                         </div>
-                        <div class="input-group">
+                        <div class="input-group" id="platform-group">
                             <label for="platform">Platform</label>
                             <select id="platform" class="theme-select">
                                 <option value="YouTube">YouTube</option>
@@ -49,6 +57,13 @@
                                 <option value="LinkedIn">LinkedIn</option>
                                 <option value="Twitter">Twitter / X</option>
                                 <option value="Blog">Blog / Website</option>
+                            </select>
+                        </div>
+                        <div class="input-group hidden" id="ratio-group">
+                            <label for="aspect-ratio">Aspect Ratio</label>
+                            <select id="aspect-ratio" class="theme-select">
+                                <option value="1:1">Square (1:1)</option>
+                                <option value="4:5">Portrait (4:5)</option>
                             </select>
                         </div>
                     </div>
@@ -86,10 +101,10 @@
             <!-- Loading State -->
             <div id="loading" class="loading-state hidden">
                 <div class="loader"></div>
-                <p>Generating aesthetic concept...</p>
+                <p id="loading-text">Generating aesthetic concept...</p>
             </div>
 
-            <!-- Result Area -->
+            <!-- Result Area (Single) -->
             <div id="result-area" class="result-area hidden">
                 
                 <div class="concept-card glass-card">
@@ -164,6 +179,17 @@
                     </div>
                 </div>
 
+            </div>
+
+            <!-- Result Area (Carousel) -->
+            <div id="carousel-result-area" class="result-area hidden">
+                <div class="carousel-header">
+                    <h2><i class="fa-solid fa-clone"></i> Carousel Slides</h2>
+                    <p id="consistency-note" class="text-muted"></p>
+                </div>
+                <div id="slides-container" class="slides-grid">
+                    <!-- Slides will be injected here -->
+                </div>
             </div>
         </main>
         
