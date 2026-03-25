@@ -4,200 +4,676 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thumbify AI | Smart Thumbnails and Zero Effort</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=1.0.3">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Runtime Utilities -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
+    <!-- Grainy Noise Overlay for Texture -->
+    <div class="noise-overlay"></div>
+    
     <div class="background-animation">
         <div class="blob"></div>
+        <div class="blob"></div>
     </div>
-    
-    <div class="container">
-        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
-            <i class="fa-solid fa-sun"></i>
-        </button>
-        <header>
-            <h1><i class="fa-solid fa-shapes"></i> Thumbify AI</h1>
-            <p>Smart Thumbnails and Zero Effort</p>
-        </header>
 
-        <main>
-            <div class="mode-switcher fadeInUp" style="animation-delay: 0.1s;">
-                <button class="mode-tab active" data-mode="single"><i class="fa-solid fa-image"></i> Single Thumbnail</button>
-                <button class="mode-tab" data-mode="carousel"><i class="fa-solid fa-images"></i> Carousel Post</button>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <nav class="sidebar-nav">
+            <a href="#" class="sidebar-link" id="side-dashboard">
+                <i class="fa-solid fa-house"></i>
+                <span>Home</span>
+            </a>
+            <a href="#" class="sidebar-link" id="side-create">
+                <i class="fa-solid fa-plus-circle"></i>
+                <span>Create New</span>
+            </a>
+            <a href="#" class="sidebar-link" id="side-studio">
+                <i class="fa-solid fa-palette"></i>
+                <span>Advanced Studio</span>
+            </a>
+            <a href="#" class="sidebar-link" id="side-templates">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Templates</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="#" class="sidebar-link" id="side-settings">
+                <i class="fa-solid fa-gear"></i>
+                <span>Settings</span>
+            </a>
+        </div>
+    </aside>
+    
+    <nav class="navbar animate-fade-in" id="top-navbar">
+        <div class="container nav-container">
+            <div class="nav-left">
+                <button id="sidebar-toggle" class="sidebar-toggle-btn">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <a href="/" class="nav-logo">
+                    <div class="logo-icon-sm">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                    <span>Thumbify <span>AI</span></span>
+                </a>
             </div>
 
-            <div class="input-section glass-card">
-                <form id="generator-form">
-                    <input type="hidden" id="gen-mode" value="single">
-                    <div class="input-group">
-                        <label for="topic">Content Topic or Title</label>
-                        <input type="text" id="topic" placeholder="e.g. 10 Best API Tools in 2024" required autocomplete="off">
-                    </div>
+            <div class="nav-center">
+                <a href="#" class="nav-link active" id="nav-dashboard">Home</a>
+                <a href="#" class="nav-link" id="nav-create">Create</a>
+                <a href="#" class="nav-link" id="nav-templates">Templates</a>
+            </div>
 
-                    <div class="options-row">
-                        <div class="input-group">
-                            <label for="audience">Target Audience</label>
-                            <select id="audience" class="theme-select">
-                                <option value="General">General</option>
-                                <option value="Beginners">Beginners</option>
-                                <option value="Developers">Developers</option>
-                                <option value="Professionals">Professionals</option>
-                                <option value="Students">Students</option>
-                                <option value="Kids">Kids</option>
-                            </select>
+            <div class="nav-right">
+                <div class="profile-section" id="profile-section">
+                    <button class="profile-trigger" id="profile-trigger">
+                        <div class="avatar" id="nav-avatar">
+                            <i class="fa-solid fa-user"></i>
                         </div>
-                        <div class="input-group" id="platform-group">
-                            <label for="platform">Platform</label>
-                            <select id="platform" class="theme-select">
-                                <option value="YouTube">YouTube</option>
-                                <option value="Instagram">Instagram</option>
-                                <option value="TikTok">TikTok</option>
-                                <option value="LinkedIn">LinkedIn</option>
-                                <option value="Twitter">Twitter / X</option>
-                                <option value="Blog">Blog / Website</option>
-                            </select>
+                        <span class="username" id="nav-username">Guest User</span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div class="profile-dropdown" id="profile-dropdown">
+                        <a href="#" id="edit-profile-trigger"><i class="fa-solid fa-user-pen"></i> Edit Profile</a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+                    </div>
+                </div>
+                <button id="theme-toggle" class="nav-icon-btn" aria-label="Toggle Theme" onclick="window.toggleTheme()">
+                    <i class="fa-solid fa-sun"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container main-container">
+        <section id="mode-selector-area" class="mode-selection-area animate-fade-in">
+            <div class="mode-selector glass-card">
+                <button type="button" class="mode-tab active" data-mode="single">
+                    <i class="fa-solid fa-image"></i> Single Thumbnail
+                </button>
+                <button type="button" class="mode-tab" data-mode="carousel">
+                    <i class="fa-solid fa-layer-group"></i> Carousel Post
+                </button>
+                <input type="hidden" id="gen-mode" value="single">
+            </div>
+        </section>
+
+        <main class="generator-card glass-card animate-slide-up">
+            <!-- Dashboard Hub Section -->
+            <section id="dashboard-section" class="dashboard-section animate-fade-in">
+                <div class="section-header align-left">
+                    <h1>Welcome back, <span class="accent-text" id="dash-username">Guest</span>!</h1>
+                    <p>Here's what's happening with your thumbnails today.</p>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stats-card glass-card">
+                        <div class="stats-icon purple">
+                            <i class="fa-solid fa-layer-group"></i>
                         </div>
-                        <div class="input-group hidden" id="ratio-group">
-                            <label for="aspect-ratio">Aspect Ratio</label>
-                            <select id="aspect-ratio" class="theme-select">
-                                <option value="1:1">Square (1:1)</option>
-                                <option value="4:5">Portrait (4:5)</option>
-                            </select>
+                        <div class="stats-info">
+                            <span class="stats-label">Total Projects</span>
+                            <h2 class="stats-value" id="count-projects">0</h2>
                         </div>
                     </div>
-                    
-                    <div class="options-row">
-                        <div class="input-group theme-group">
-                            <label for="theme">Visual Theme</label>
-                            <select id="theme" class="theme-select">
-                                <option value="Aesthetic">Aesthetic (Soft, moody, glassmorphism)</option>
-                                <option value="Tech">Tech (Clean, code interfaces, futuristic)</option>
-                                <option value="Gaming">Gaming (High contrast, neon, action)</option>
-                                <option value="Finance">Finance (Minimalist, elegant, premium)</option>
-                                <option value="Vlog">Vlog (Bright, sunny, lifestyle)</option>
-                            </select>
+                    <div class="stats-card glass-card">
+                        <div class="stats-icon blue">
+                            <i class="fa-solid fa-download"></i>
                         </div>
-                        
-                        <div class="input-group logo-group">
-                            <label for="logo">Custom Logo (Optional)</label>
-                            <div class="file-upload">
-                                <input type="file" id="logo" accept="image/png, image/jpeg, image/webp" class="file-input">
-                                <label for="logo" class="file-label">
-                                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                                    <span id="file-name">Choose Logo</span>
-                                </label>
+                        <div class="stats-info">
+                            <span class="stats-label">Total Downloads</span>
+                            <h2 class="stats-value" id="count-downloads">0</h2>
+                        </div>
+                    </div>
+                    <div class="stats-card glass-card">
+                        <div class="stats-icon cyan">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <div class="stats-info">
+                            <span class="stats-label">Credits Left</span>
+                            <h2 class="stats-value" id="count-credits">500</h2>
+                            <div class="stats-progress-container">
+                                <div class="stats-progress-bar" style="width: 100%;"></div>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Dashboard Content Split -->
+                <div class="dashboard-content">
+                    <!-- Recent Projects -->
+                    <div class="recent-projects-area">
+                        <div class="area-header">
+                            <h3><i class="fa-solid fa-clock-rotate-left"></i> Recent Projects</h3>
+                            <a href="#" class="view-all">View All</a>
+                        </div>
+                        <div class="recent-grid" id="recent-projects-list">
+                            <!-- Mock Projects via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="quick-actions-area">
+                        <div class="area-header">
+                            <h3><i class="fa-solid fa-bolt-lightning"></i> Quick Actions</h3>
+                        </div>
+                        <div class="actions-list">
+                            <button class="action-btn primary" id="btn-dash-create">
+                                <i class="fa-solid fa-plus-circle"></i>
+                                <span>New Thumbnail</span>
+                            </button>
+                            <button class="action-btn secondary" id="btn-dash-templates">
+                                <i class="fa-solid fa-layer-group"></i>
+                                <span>Browse Templates</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Generator Form -->
+            <form id="generator-form" class="generator-form glass-card animate-fade-in hidden">
+                <div class="input-group full-width">
+                    <label for="topic">Content Topic or Title</label>
+                    <input type="text" id="topic" placeholder="e.g. 10 Best API Tools in 2024" required autocomplete="off">
+                </div>
+
+                <div class="form-grid">
+                    <div class="input-group" id="platform-group">
+                        <label>Social Platform</label>
+                        <div class="custom-select" id="select-platform">
+                            <div class="select-trigger">
+                                <span>YouTube</span>
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                            <div class="select-options">
+                                <div class="select-option active" data-val="YouTube">YouTube</div>
+                                <div class="select-option" data-val="Instagram">Instagram</div>
+                                <div class="select-option" data-val="LinkedIn">LinkedIn</div>
+                                <div class="select-option" data-val="Twitter">Twitter / X</div>
+                            </div>
+                            <input type="hidden" id="platform" value="YouTube">
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Target Audience</label>
+                        <div class="custom-select" id="select-audience">
+                            <div class="select-trigger">
+                                <span>General</span>
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                            <div class="select-options">
+                                <div class="select-option active" data-val="General">General</div>
+                                <div class="select-option" data-val="Content Creators">Content Creators</div>
+                                <div class="select-option" data-val="Developers">Developers</div>
+                                <div class="select-option" data-val="Business Owners">Business Owners</div>
+                            </div>
+                            <input type="hidden" id="audience" value="General">
+                        </div>
+                    </div>
+
+                    <div class="input-group hidden" id="ratio-group">
+                        <label>Slide Size / Ratio</label>
+                        <div class="custom-select" id="select-ratio">
+                            <div class="select-trigger">
+                                <span>Square (1:1)</span>
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                            <div class="select-options">
+                                <div class="select-option active" data-val="1:1">Square (1:1)</div>
+                                <div class="select-option" data-val="4:5">Portrait (4:5)</div>
+                                <div class="select-option" data-val="9:16">Story / Reel (9:16)</div>
+                                <div class="select-option" data-val="16:9">Landscape (16:9)</div>
+                            </div>
+                            <input type="hidden" id="aspect-ratio" value="1:1">
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Visual Theme</label>
+                        <div class="custom-select" id="select-theme">
+                            <div class="select-trigger">
+                                <span>Aesthetic</span>
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                            <div class="select-options">
+                                <div class="select-option active" data-val="Aesthetic">Aesthetic (Soft, moody)</div>
+                                <div class="select-option" data-val="Vibrant">Vibrant (Bold, bright)</div>
+                                <div class="select-option" data-val="Minimalist">Minimalist (Clean, simple)</div>
+                                <div class="select-option" data-val="Futuristic">Futuristic (Neon, tech)</div>
+                            </div>
+                            <input type="hidden" id="theme" value="Aesthetic">
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="num-slides">Number of Slides</label>
+                        <input type="number" id="num-slides" min="1" max="20" value="5" class="theme-input">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="logo">Custom Logo (Optional)</label>
+                        <div class="file-upload">
+                            <input type="file" id="logo" accept="image/png, image/jpeg, image/webp" class="file-input">
+                            <label for="logo" class="file-label">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <span id="file-name">Choose Logo</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Restoration of Toggles -->
+                    <div class="input-group">
+                        <label>Content Creation Mode</label>
+                        <div class="toggle-group">
+                            <button type="button" class="toggle-btn active" data-val="ai">AI Content</button>
+                            <button type="button" class="toggle-btn" data-val="manual">Manual Text</button>
+                            <input type="hidden" id="content-mode" value="ai">
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Visual Generation Style</label>
+                        <div class="toggle-group">
+                            <button type="button" class="toggle-btn active" data-val="image">Photorealistic</button>
+                            <button type="button" class="toggle-btn" data-val="abstract">Minimalist Art</button>
+                            <input type="hidden" id="bg-mode" value="image">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manual Content Group (Shown when 'Manual Text' is selected) -->
+                <div class="input-group full-width hidden" id="manual-content-group" style="margin-top: 20px;">
+                    <label for="manual-text">Your Content (Describe each slide or paste text)</label>
+                    <textarea id="manual-text" rows="4" placeholder="Slide 1: Title | Subtext&#10;Slide 2: Title | Subtext..."></textarea>
+                </div>
+
+                <!-- Background Custom Prompt (Optional) -->
+                <div class="input-group full-width" id="bg-prompt-group" style="margin-top: 20px;">
+                    <label for="bg-custom-prompt">Custom Visual Instructions (Optional)</label>
+                    <input type="text" id="bg-custom-prompt" placeholder="e.g. dramatic lighting, 8k, vibrant colors">
+                </div>
+
+                <div class="form-actions">
                     <button type="submit" id="generate-btn" class="primary-btn">
                         <span>Generate Concept</span>
                         <i class="fa-solid fa-bolt"></i>
                     </button>
-                </form>
-            </div>
+                </div>
+            </form>
 
-            <!-- Loading State -->
-            <div id="loading" class="loading-state hidden">
-                <div class="loader"></div>
-                <p id="loading-text">Generating aesthetic concept...</p>
-            </div>
+            <!-- Template Gallery Section -->
+            <section id="templates-section" class="templates-section hidden">
+                <div class="section-header">
+                    <h2><i class="fa-solid fa-layer-group"></i> Pre-made Templates</h2>
+                    <p>Select a niche to start with a high-quality preset</p>
+                </div>
 
-            <!-- Result Area (Single) -->
-            <div id="result-area" class="result-area hidden">
-                
-                <div class="concept-card glass-card">
-                    <div class="card-header">
-                        <h2><i class="fa-solid fa-image"></i> Concept Details</h2>
-                    </div>
-                    
-                    <div class="concept-content">
-                        <!-- Generated Image Area -->
-                        <div id="image-container" class="detail-group hidden">
-                            <div class="image-header">
-                                <h3><i class="fa-solid fa-images"></i> Generated Thumbnail Art</h3>
-                                <button id="download-btn" class="icon-btn hidden" title="Download Image">
-                                    <i class="fa-solid fa-download"></i> Download
-                                </button>
+                <div class="template-grid">
+                    <!-- Gaming Template -->
+                    <div class="template-card" data-category="Gaming">
+                        <div class="template-preview">
+                            <img src="/static/images/templates/gaming.png" alt="Gaming Template">
+                            <div class="template-overlay">
+                                <button class="use-template-btn">Use Template</button>
                             </div>
-                            <div id="image-error" class="error-text hidden"></div>
-                            <img id="generated-image" src="" alt="Generated Thumbnail" class="generated-img hidden">
+                        </div>
+                        <div class="template-info">
+                            <h3>Pro Gaming</h3>
+                            <span class="category-tag gaming">Gaming</span>
+                        </div>
+                    </div>
+
+                    <!-- Vlog Template -->
+                    <div class="template-card" data-category="Vlog">
+                        <div class="template-preview">
+                            <img src="/static/images/templates/vlog.png" alt="Vlog Template">
+                            <div class="template-overlay">
+                                <button class="use-template-btn">Use Template</button>
+                            </div>
+                        </div>
+                        <div class="template-info">
+                            <h3>Lifestyle Vlog</h3>
+                            <span class="category-tag vlog">Vlog</span>
+                        </div>
+                    </div>
+
+                    <!-- Tech Template -->
+                    <div class="template-card" data-category="Tech">
+                        <div class="template-preview">
+                            <img src="/static/images/templates/tech.png" alt="Tech Template">
+                            <div class="template-overlay">
+                                <button class="use-template-btn">Use Template</button>
+                            </div>
+                        </div>
+                        <div class="template-info">
+                            <h3>Future Tech</h3>
+                            <span class="category-tag tech">Tech</span>
+                        </div>
+                    </div>
+
+                    <!-- Education Template -->
+                    <div class="template-card" data-category="Education">
+                        <div class="template-preview">
+                            <img src="/static/images/templates/education.png" alt="Education Template">
+                            <div class="template-overlay">
+                                <button class="use-template-btn">Use Template</button>
+                            </div>
+                        </div>
+                        <div class="template-info">
+                            <h3>Academic Course</h3>
+                            <span class="category-tag education">Education</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Advanced Studio Section -->
+            <section id="studio-section" class="studio-section hidden">
+                <div class="studio-header glass-card">
+                    <div class="studio-toolbar-left">
+                        <button class="tool-btn" id="btn-add-text"><i class="fa-solid fa-font"></i> <span>Add Text</span></button>
+                        <div class="palette-container">
+                            <button class="tool-btn" id="btn-add-element-trigger"><i class="fa-solid fa-shapes"></i> <span>Add Element</span></button>
+                            <div class="shape-palette glass-card hidden" id="shape-palette">
+                                <button class="shape-opt" data-shape="square"><i class="fa-regular fa-square"></i> Square</button>
+                                <button class="shape-opt" data-shape="circle"><i class="fa-regular fa-circle"></i> Circle</button>
+                                <button class="shape-opt" data-shape="rect"><i class="fa-solid fa-rectangle-ad"></i> Rectangle</button>
+                                <button class="shape-opt" data-shape="arrow"><i class="fa-solid fa-arrow-right"></i> Arrow</button>
+                                <div class="ai-shape-divider"><span>OR MAGIC SHAPE</span></div>
+                                <div class="ai-shape-input-group">
+                                    <input type="text" id="ai-shape-prompt" placeholder="Type 'Star', 'Hexagon'...">
+                                    <button id="btn-ai-shape-go" title="Generate AI Shape"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="file-upload-tool">
+                            <input type="file" id="studio-upload" accept="image/*" hidden>
+                            <label for="studio-upload" class="tool-btn"><i class="fa-solid fa-file-arrow-up"></i> <span>Upload Asset</span></label>
+                        </div>
+                    </div>
+                    <div class="studio-toolbar-center">
+                        <div class="resize-selector">
+                            <label>Canvas Size:</label>
+                            <select id="canvas-preset">
+                                <option value="youtube-thumb">YouTube Thumbnail (16:9)</option>
+                                <option value="insta-post">Instagram Post (1:1)</option>
+                                <option value="insta-story">Story / Reel (9:16)</option>
+                                <option value="custom">Custom Size</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="studio-toolbar-right">
+                        <div class="palette-container">
+                            <button class="tool-btn" id="btn-studio-data-trigger"><i class="fa-solid fa-database"></i> <span>Data</span></button>
+                            <div class="shape-palette glass-card hidden" id="studio-data-palette" style="right: 0; width: 180px;">
+                                <button class="shape-opt" onclick="triggerStudioImport()"><i class="fa-solid fa-file-import"></i> Import Project</button>
+                                <button class="shape-opt" onclick="exportStudioLayers()"><i class="fa-solid fa-file-export"></i> Save Layers JSON</button>
+                                <div class="ai-shape-divider"><span>DANGER</span></div>
+                                <button class="shape-opt" onclick="clearStudioCanvas()" style="color: #f43f5e;"><i class="fa-solid fa-trash-can"></i> Clear Stage</button>
+                            </div>
+                        </div>
+                        <div class="palette-container">
+                            <button class="primary-btn-sm" id="btn-studio-export-trigger"><i class="fa-solid fa-download"></i> <span>Export</span></button>
+                            <div class="shape-palette glass-card hidden" id="studio-export-palette" style="right: 0; width: 180px;">
+                                <button class="shape-opt" onclick="exportStudioElement('png')"><i class="fa-solid fa-image"></i> Download PNG</button>
+                                <button class="shape-opt" onclick="exportStudioElement('pdf')"><i class="fa-solid fa-file-pdf"></i> Download PDF</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="studio-workspace">
+                    <!-- Left Sidebar (Layers) -->
+                    <aside class="studio-layers-panel glass-card">
+                        <div class="panel-header">
+                            <h4><i class="fa-solid fa-layer-group"></i> Layers</h4>
+                        </div>
+                        <div class="layers-list" id="layers-list">
+                            <div class="empty-layers">No layers yet.</div>
+                        </div>
+                    </aside>
+
+                    <!-- Main Canvas Center -->
+                    <div class="canvas-viewport">
+                        <div class="main-canvas" id="main-canvas" style="width: 1280px; height: 720px; aspect-ratio: 16/9;">
+                            <!-- Elements will be injected here -->
+                            <div class="canvas-placeholder">
+                                <i class="fa-solid fa-expand"></i>
+                                <p>Interactive Canvas Ready</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Sidebar (Properties) -->
+                    <aside class="studio-props-panel glass-card">
+                        <div class="panel-header">
+                            <h4><i class="fa-solid fa-sliders"></i> Properties</h4>
+                        </div>
+                        <div class="props-content" id="props-content">
+                            <div class="empty-props">Select a layer to edit properties.</div>
+                        </div>
+                    </aside>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings-section" class="settings-section hidden animate-fade-in">
+                <div class="section-header">
+                    <h2><i class="fa-solid fa-gear"></i> App Settings</h2>
+                    <p>Customize your Thumbify experience and account preferences.</p>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="settings-card glass-card">
+                        <h3><i class="fa-solid fa-user"></i> Account Profile</h3>
+                        <div class="settings-item">
+                            <label>Display Name</label>
+                            <input type="text" value="Guest User" disabled>
+                            <p class="help-text">Use "Edit Profile" in top menu to change this.</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-card glass-card">
+                        <h3><i class="fa-solid fa-palette"></i> Appearance</h3>
+                        <div class="settings-item">
+                            <div class="flex-row">
+                                <div>
+                                    <label>Dark Mode</label>
+                                    <p class="help-text">Switch between light and dark themes.</p>
+                                </div>
+                                <button class="primary-btn-sm" onclick="window.toggleTheme()">Toggle</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card glass-card">
+                        <h3><i class="fa-solid fa-robot"></i> AI Preferences</h3>
+                        <div class="settings-item">
+                            <label>Preferred Model</label>
+                            <select class="settings-select">
+                                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Balanced)</option>
+                                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Precision)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Loading State -->
+        <div id="loading" class="loading-state hidden text-center">
+            <div class="loader-container">
+                <div class="loader"></div>
+                <div class="loader-glow"></div>
+            </div>
+            <p id="loading-text">Generating aesthetic concept...</p>
+        </div>
+
+        <!-- Result Areas -->
+        <div id="result-area" class="result-area hidden">
+            <div class="concept-card glass-card">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-wand-magic-sparkles"></i> Concept Details</h2>
+                </div>
+                <div class="concept-content">
+                    <div id="image-container" class="detail-group highlight hidden">
+                        <div class="image-header">
+                            <h3>Generated Background Art</h3>
+                        <div class="palette-container" style="display: inline-block; vertical-align: middle;">
+                            <button id="btn-single-export-trigger" class="icon-btn hidden"><i class="fa-solid fa-download"></i> Save</button>
+                            <div class="shape-palette glass-card hidden" id="single-export-palette" style="bottom: 100%; margin-bottom: 10px; right: 0; width: 200px;">
+                                <button class="shape-opt" id="btn-single-download-png"><i class="fa-solid fa-image"></i> Download PNG</button>
+                                <button class="shape-opt" id="btn-single-download-pdf"><i class="fa-solid fa-file-pdf"></i> Save as PDF</button>
+                            </div>
                         </div>
 
-                        <div class="detail-group">
-                            <h3><i class="fa-solid fa-lightbulb"></i> Overall Concept</h3>
-                            <p id="visual-concept" class="prompt-text"></p>
                         </div>
-                        
-                        <div class="detail-group">
-                            <h3><i class="fa-solid fa-user-astronaut"></i> Main Subject</h3>
-                            <p id="main-subject" class="layout-text"></p>
-                        </div>
+                        <img id="generated-image" src="" alt="Generated Art" class="generated-img">
+                        <p id="image-error" class="error-msg hidden"></p>
+                    </div>
 
+                    <div class="detail-grid">
                         <div class="detail-group">
-                            <h3><i class="fa-solid fa-image"></i> Background Scene</h3>
-                            <p id="background-scene" class="layout-text"></p>
+                            <h3><i class="fa-solid fa-lightbulb"></i> Concept</h3>
+                            <p id="visual-concept"></p>
                         </div>
-                        
                         <div class="detail-group">
-                            <h3><i class="fa-solid fa-face-smile"></i> Emotion / Action</h3>
-                            <p id="emotion-action" class="layout-text"></p>
+                            <h3><i class="fa-solid fa-user"></i> Subject</h3>
+                            <p id="main-subject"></p>
                         </div>
-
                         <div class="detail-group">
-                            <h3><i class="fa-solid fa-droplet"></i> Color Palette</h3>
+                            <h3><i class="fa-solid fa-palette"></i> Palette</h3>
                             <div id="color-palette" class="color-palette-display"></div>
                         </div>
-
-                        <div class="detail-group">
-                            <h3><i class="fa-regular fa-lightbulb"></i> Lighting Style</h3>
-                            <p id="lighting-style" class="layout-text"></p>
-                        </div>
-
-                        <div class="detail-group">
-                            <h3><i class="fa-solid fa-crop-simple"></i> Composition</h3>
-                            <p id="composition" class="layout-text"></p>
-                        </div>
-                        
                         <div class="detail-group">
                             <h3><i class="fa-solid fa-font"></i> Text Overlay</h3>
-                            <div id="text-overlay" class="overlay-text-display"></div>
-                            <button class="copy-btn copy-text-btn" onclick="copyText('text-overlay', this)" title="Copy Text"><i class="fa-regular fa-copy"></i></button>
+                            <p id="text-overlay" class="accent-text"></p>
                         </div>
+                    </div>
 
-                        <div class="detail-group">
-                            <h3><i class="fa-solid fa-fire"></i> Viral Hook</h3>
-                            <p id="viral-hook" class="layout-text"></p>
-                        </div>
-
-                        <div class="detail-group">
-                            <h3><i class="fa-solid fa-terminal"></i> Image Prompt</h3>
-                            <p id="image-prompt" class="prompt-text"></p>
-                            <button class="copy-btn" onclick="copyText('image-prompt', this)" title="Copy Prompt"><i class="fa-regular fa-copy"></i></button>
+                    <div class="detail-group full-width">
+                        <h3><i class="fa-solid fa-terminal"></i> Image Prompt</h3>
+                        <div class="prompt-box">
+                            <p id="image-prompt"></p>
+                            <button class="copy-btn" onclick="copyText('image-prompt', this)" type="button"><i class="fa-regular fa-copy"></i></button>
                         </div>
                     </div>
                 </div>
 
+                <!-- Magic Lab Area -->
+                <div class="magic-lab-area animate-fade-in" style="margin-top: 50px;">
+                    <div class="area-header">
+                        <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Magic Lab <span class="badge">New</span></h3>
+                    </div>
+                    <div class="magic-grid">
+                        <div class="magic-card glass-card shadow-modern" id="tool-titles">
+                            <div class="magic-icon orange"><i class="fa-solid fa-heading"></i></div>
+                            <h4>Auto Title Gen</h4>
+                            <p>Generate 5 viral, click-worthy titles for any topic.</p>
+                            <button class="magic-btn">Launch Tool</button>
+                        </div>
+                        <div class="magic-card glass-card shadow-modern" id="tool-bg">
+                            <div class="magic-icon green"><i class="fa-solid fa-image-portrait"></i></div>
+                            <h4>BG Remover</h4>
+                            <p>Clean up your product or portrait shots instantly.</p>
+                            <button class="magic-btn">Upload Image</button>
+                        </div>
+                        <div class="magic-card glass-card shadow-modern" id="tool-styling">
+                            <div class="magic-icon pink"><i class="fa-solid fa-palette"></i></div>
+                            <h4>Smart Styling</h4>
+                            <p>AI suggestions for colors and typography.</p>
+                            <button class="magic-btn">Get Advice</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="carousel-result-area" class="result-area hidden">
+            <div class="carousel-header">
+                <h2><i class="fa-solid fa-layer-group"></i> Carousel Slides</h2>
+                <p id="consistency-note" class="text-secondary"></p>
+            </div>
+            
+            <!-- Carousel Edit Toolbar -->
+            <div class="carousel-toolbar glass-card shadow-modern">
+                <div class="toolbar-left">
+                    <button id="btn-carousel-undo" class="icon-btn-sm" title="Undo (Ctrl+Z)" disabled><i class="fa-solid fa-rotate-left"></i></button>
+                    <button id="btn-carousel-redo" class="icon-btn-sm" title="Redo (Ctrl+Y)" disabled><i class="fa-solid fa-rotate-right"></i></button>
+                </div>
+                <div class="toolbar-center">
+                    <span class="slide-count-label"><i class="fa-solid fa-images"></i> <span id="current-slide-total">0</span> Slides</span>
+                </div>
+                <div class="toolbar-right">
+                    <div class="palette-container" style="display: inline-block; vertical-align: middle;">
+                        <button id="btn-carousel-export-trigger" class="secondary-btn-sm"><i class="fa-solid fa-download"></i> Export All</button>
+                        <div class="shape-palette glass-card hidden" id="carousel-export-palette" style="bottom: 100%; margin-bottom: 10px; right: 0; width: 200px;">
+                            <button class="shape-opt" onclick="downloadAllCarouselSlides()"><i class="fa-solid fa-images"></i> Download all PNG</button>
+                            <button class="shape-opt" onclick="exportCarouselAsPDF()"><i class="fa-solid fa-file-pdf"></i> Save as PDF</button>
+                        </div>
+                    </div>
+                    <button id="btn-carousel-add" class="secondary-btn-sm"><i class="fa-solid fa-plus"></i> Add Slide</button>
+                </div>
+                <!-- Hidden Input for Data Import -->
+                <input type="file" id="data-import-input" accept=".csv,.json" hidden onchange="handleDataImport(this)">
             </div>
 
-            <!-- Result Area (Carousel) -->
-            <div id="carousel-result-area" class="result-area hidden">
-                <div class="carousel-header">
-                    <h2><i class="fa-solid fa-clone"></i> Carousel Slides</h2>
-                    <p id="consistency-note" class="text-muted"></p>
-                </div>
-                <div id="slides-container" class="slides-grid">
-                    <!-- Slides will be injected here -->
+            <div id="slides-container" class="slides-grid sortable-slides"></div>
+        </div>
+
+        <footer class="app-footer">
+            <div class="footer-content">
+                <p>&copy; 2026 Thumbify AI.</p>
+                <div class="footer-links">
+                    <a href="#"><i class="fa-brands fa-github"></i></a>
+                    <a href="#"><i class="fa-brands fa-twitter"></i></a>
                 </div>
             </div>
-        </main>
-        
-        <footer>
-            <p>Powered by Google Gemini Pro</p>
         </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <!-- Edit Profile Modal -->
+    <div id="edit-profile-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-card animate-scale-up">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-user-pen"></i> Edit Profile</h3>
+                <button id="close-modal" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="profile-preview">
+                    <div class="avatar-lg" id="modal-avatar">G</div>
+                    <p>Preview Avatar</p>
+                </div>
+                <div class="input-group full-width">
+                    <label for="new-username">Display Name</label>
+                    <input type="text" id="new-username" placeholder="e.g. Alex Doe" value="Guest User">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-profile" class="primary-btn full-width">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=1.0.6"></script>
+    <script>
+        function copyText(id, btn) {
+            const text = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const icon = btn.querySelector('i');
+                icon.className = 'fa-solid fa-check';
+                setTimeout(() => { icon.className = 'fa-regular fa-copy'; }, 2000);
+            });
+        }
+    </script>
 </body>
 </html>
